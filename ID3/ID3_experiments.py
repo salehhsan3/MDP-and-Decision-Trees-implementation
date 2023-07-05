@@ -1,3 +1,5 @@
+import sklearn.model_selection
+
 from ID3 import ID3
 from utils import *
 
@@ -39,7 +41,18 @@ def find_best_pruning_m(train_dataset: np.array, m_choices, num_folds=5):
         #  or implement something else.
 
         # ====== YOUR CODE: ======
-        raise NotImplementedError
+        CrossValidation = sklearn.model_selection.KFold(n_splits=5, shuffle=True, random_state=ID)
+        current_accuracies = []
+
+        for current_train_set, current_test_set in create_train_validation_split(train_dataset, CrossValidation,0.2):
+            x_train, y_train, x_test, y_test = get_dataset_split(current_train_set, current_test_set, target_attribute)
+            model.fit(x_train, y_train)
+            current_pred = model.predict(x_test)
+            current_pred = np.array([1 if current_pred[i] == 'M' else 0 for i in range(len(current_pred))])
+            y_test = np.array([1 if y_test[i] == 'M' else 0 for i in range(len(y_test))])
+            current_accuracies += [accuracy(y_test, current_pred)]
+
+        accuracies += [current_accuracies]
         # ========================
 
     best_m_idx = np.argmax([np.mean(acc) for acc in accuracies])
@@ -62,9 +75,15 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    our_tree = ID3([])
+    our_tree.fit(x_train, y_train)
+    our_pred = our_tree.predict(x_test)
+    our_pred = np.array([1 if our_pred[i] == 'M' else 0 for i in range(len(our_pred))])
+    y_test = np.array([1 if y_test[i] == 'M' else 0 for i in range(len(y_test))])
+    acc = accuracy(y_test, our_pred)
     # ========================
 
+    # this is the true test:
     assert acc > 0.9, 'you should get an accuracy of at least 90% for the full ID3 decision tree'
     print(f'Test Accuracy: {acc * 100:.2f}%' if formatted_print else acc)
 
@@ -89,8 +108,10 @@ def cross_validation_experiment(plot_graph=True):
     num_folds = 5
 
     # ====== YOUR CODE: ======
+    m_choices = [10, 20, 30, 40, 50]
     assert len(m_choices) >= 5, 'fill the m_choices list with  at least 5 different values for M.'
-    raise NotImplementedError
+
+    best_m, accuracies = find_best_pruning_m(train_dataset, m_choices, num_folds)
 
     # ========================
     accuracies_mean = np.array([np.mean(acc) * 100 for acc in accuracies])
@@ -124,8 +145,20 @@ def best_m_test(x_train, y_train, x_test, y_test, min_for_pruning):
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    our_tree = ID3([], min_for_pruning=min_for_pruning)
+    our_tree.fit(x_train, y_train)
+    our_pred = our_tree.predict(x_test)
+    our_pred = np.array([1 if our_pred[i] == 'M' else 0 for i in range(len(our_pred))])
+    y_test = np.array([1 if y_test[i] == 'M' else 0 for i in range(len(y_test))])
+    acc = accuracy(y_test, our_pred)
     # ========================
+
+    """
+    print(len(our_pred), len((y_test)))
+    for idx, (example1, example2) in enumerate(zip(our_pred, y_test)):
+        if example1 != example2:
+            print(idx, x_test[idx], example2, example1)
+    """
 
     return acc
 
@@ -148,15 +181,28 @@ if __name__ == '__main__':
        (*) To run the cross validation experiment over the  M pruning hyper-parameter 
            uncomment below code and run it
            modify the value from False to True to plot the experiment result
-    """
+    
+
     plot_graphs = True
     best_m = cross_validation_experiment(plot_graph=plot_graphs)
     print(f'best_m = {best_m}')
 
-    """
+    
         pruning experiment, run with the best parameter
         (*) To run the experiment uncomment below code and run it
     """
-    acc = best_m_test(*data_split, min_for_pruning=best_m)
+
+
+    acc = best_m_test(*data_split, min_for_pruning=50)
     assert acc > 0.95, 'you should get an accuracy of at least 95% for the pruned ID3 decision tree'
     print(f'Test Accuracy: {acc * 100:.2f}%' if formatted_print else acc)
+
+    """
+    x = data_split[2][105]
+    print(x)
+    m = ID3([], min_for_pruning=50)
+    m.fit(data_split[0], data_split[1])
+    y = m.predict_sample(attributes_names, x)
+    print(y, 'true:', data_split[3][105])
+    """
+

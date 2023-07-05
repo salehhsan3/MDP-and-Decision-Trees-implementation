@@ -14,7 +14,7 @@ from sklearn.model_selection import KFold
 ========================================================================
 """
 
-ID = 123456789  # TODO: change it to your personal ID
+ID = 212485577  # TODO: change it to your personal ID
 random_gen = RandomState(seed=ID)
 print_formatted_values = False
 
@@ -38,7 +38,12 @@ def accuracy(y: np.array, y_pred: np.array):
     assert y.ndim == 1
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+
+    false_predictions = np.linalg.norm(y - y_pred, ord=1)  # also the Hamming distance between the binary vectors
+    correct_predictions = y.size - false_predictions
+    accuracy_val = correct_predictions / y.size
+
+
     # ========================
 
     return accuracy_val
